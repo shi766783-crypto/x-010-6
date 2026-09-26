@@ -1,7 +1,8 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTravelStore } from '../stores/travel'
+import { TRIP_TYPES } from '../constants'
 import { formatMoney } from '../utils/format'
 import BarChart from '../components/charts/BarChart.vue'
 import DonutChart from '../components/charts/DonutChart.vue'
@@ -19,6 +20,23 @@ const statCards = computed(() => [
   { label: '平均每次出行天数', value: stats.value.avgDays, suffix: '天' },
   { label: '行李打包完成率', value: stats.value.avgPackingRate, suffix: '%' },
 ])
+
+// 各次出行花费对比：按出行类型缩小对比范围
+const ALL_TYPES = '全部'
+const spendTypeFilter = ref(ALL_TYPES)
+const tripTypeOptions = [ALL_TYPES, ...TRIP_TYPES]
+
+const perTripSpend = computed(() => {
+  const all = stats.value.perTripSpend
+  if (spendTypeFilter.value === ALL_TYPES) return all
+  return all.filter((d) => d.tripType === spendTypeFilter.value)
+})
+
+const perTripEmptyText = computed(() =>
+  spendTypeFilter.value === ALL_TYPES
+    ? '暂无出行数据'
+    : `暂无「${spendTypeFilter.value}」类型的出行数据`
+)
 </script>
 
 <template>
@@ -49,8 +67,18 @@ const statCards = computed(() => [
       </div>
 
       <div class="card mt-16">
-        <h3 class="card-title">各次出行花费对比</h3>
-        <BarChart :data="stats.perTripSpend" :formatter="money" color="#10b981" />
+        <h3 class="card-title">
+          <span>各次出行花费对比</span>
+          <select v-model="spendTypeFilter" class="select filter-select" aria-label="按出行类型筛选">
+            <option v-for="t in tripTypeOptions" :key="t" :value="t">{{ t }}</option>
+          </select>
+        </h3>
+        <BarChart
+          :data="perTripSpend"
+          :formatter="money"
+          color="#10b981"
+          :empty-text="perTripEmptyText"
+        />
       </div>
     </template>
   </div>
@@ -88,5 +116,13 @@ const statCards = computed(() => [
   font-weight: 500;
   color: var(--text-secondary);
   margin-left: 2px;
+}
+
+.filter-select {
+  width: 140px;
+  flex-shrink: 0;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 400;
 }
 </style>
