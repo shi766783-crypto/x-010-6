@@ -1,7 +1,8 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTravelStore } from '../stores/travel'
+import { TRIP_TYPES } from '../constants'
 import { formatMoney } from '../utils/format'
 import BarChart from '../components/charts/BarChart.vue'
 import DonutChart from '../components/charts/DonutChart.vue'
@@ -11,6 +12,14 @@ const router = useRouter()
 
 const stats = computed(() => store.dashboardStats)
 const money = (v) => formatMoney(v)
+
+// 各次出行花费对比：按出行类型筛选，空串表示全部
+const tripTypeFilter = ref('')
+const perTripSpend = computed(() =>
+  tripTypeFilter.value
+    ? stats.value.perTripSpend.filter((d) => d.tripType === tripTypeFilter.value)
+    : stats.value.perTripSpend
+)
 
 const statCards = computed(() => [
   { label: '累计出行次数', value: stats.value.totalTrips, suffix: '次' },
@@ -49,8 +58,19 @@ const statCards = computed(() => [
       </div>
 
       <div class="card mt-16">
-        <h3 class="card-title">各次出行花费对比</h3>
-        <BarChart :data="stats.perTripSpend" :formatter="money" color="#10b981" />
+        <h3 class="card-title">
+          各次出行花费对比
+          <select v-model="tripTypeFilter" class="select type-filter" aria-label="按出行类型筛选">
+            <option value="">全部类型</option>
+            <option v-for="t in TRIP_TYPES" :key="t" :value="t">{{ t }}</option>
+          </select>
+        </h3>
+        <BarChart
+          :data="perTripSpend"
+          :formatter="money"
+          color="#10b981"
+          empty-text="该出行类型下暂无计划，换个类型看看"
+        />
       </div>
     </template>
   </div>
@@ -88,5 +108,12 @@ const statCards = computed(() => [
   font-weight: 500;
   color: var(--text-secondary);
   margin-left: 2px;
+}
+
+.type-filter {
+  width: auto;
+  padding: 5px 10px;
+  font-size: 13px;
+  font-weight: 400;
 }
 </style>

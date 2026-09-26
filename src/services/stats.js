@@ -37,8 +37,12 @@ export function computeDashboardStats(plans) {
     })
   })
 
-  // 各次出行花费对比
-  const perTripSpend = plans.map((p) => ({ label: p.name, value: planTotalSpend(p) }))
+  // 各次出行花费对比（附带出行类型，供看板按类型筛选）
+  const perTripSpend = plans.map((p) => ({
+    label: p.name,
+    value: planTotalSpend(p),
+    tripType: p.tripType,
+  }))
 
   return {
     totalTrips,
